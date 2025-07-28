@@ -7,11 +7,13 @@ import 'package:my_first_app/utils/firestore_helpers.dart'; // ✅ 추가
 import 'package:my_first_app/widget/empty_diary_card.dart';
 import 'package:my_first_app/widget/diary_page_card.dart';
 import 'package:my_first_app/widget/diary_page_indicator.dart';
+import 'package:my_first_app/screens/3_feed/diary_detail_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   final String groupId;
   final String groupName;
   final String currentUserId;
+  
 
   const FeedScreen({
     super.key,
@@ -265,6 +267,43 @@ class _FeedScreenState extends State<FeedScreen> {
                                     groupId: widget.groupId,
                                     date: formattedDate,
                                     diaryId: diaryDocs[index].id,
+                                      // 🔹 공개/숨기기 버튼 콜백
+                                    onToggleRevealed: () async {
+                                      try {
+                                        await FirebaseFirestore.instance
+                                            .collection('groups')
+                                            .doc(widget.groupId)
+                                            .collection('daily_questions')
+                                            .doc(formattedDate)
+                                            .collection('diaries')
+                                            .doc(diaryDocs[index].id)
+                                            .update({
+                                          'isRevealed': !(data['isRevealed'] ?? false),
+                                        });
+                                      } catch (e) {
+                                        print('🔥 공개 상태 토글 중 오류 발생: $e');
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('오류 발생: $e')),
+                                        );
+                                      }
+                                    },
+
+                                    onImageTap: () {
+                                      final dateText = DateFormat('yyyy년 M월 d일 EEEE', 'ko_KR')
+                                          .format(selectedDate);
+
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => DiaryDetailScreen(
+                                            imageUrl: data['imageUrl'],
+                                            title: data['title'],
+                                            content: data['content'],
+                                            dateText: dateText,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   );
                                 } else {
                                   return Center(
