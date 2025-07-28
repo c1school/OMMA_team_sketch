@@ -13,7 +13,6 @@ class FeedScreen extends StatefulWidget {
   final String groupId;
   final String groupName;
   final String currentUserId;
-  
 
   const FeedScreen({
     super.key,
@@ -120,7 +119,6 @@ class _FeedScreenState extends State<FeedScreen> {
         },
       );
 
-      // ✅ 돌아온 뒤 질문 다시 로드
       _refreshDailyQuestion();
 
       print('➡️ DiaryUploadScreen으로 이동 완료');
@@ -259,6 +257,12 @@ class _FeedScreenState extends State<FeedScreen> {
                                   final isMine =
                                       data['createdBy'] == widget.currentUserId;
 
+                                  final isAuthorRevealed =
+                                      data['isAuthorRevealed'] == true;
+                                  final nickname = isAuthorRevealed
+                                      ? data['createdByNickname'] ?? '작성자'
+                                      : null;
+
                                   return DiaryPageCard(
                                     diaryData: data,
                                     isLastPage: index == diaryDocs.length - 1,
@@ -267,7 +271,6 @@ class _FeedScreenState extends State<FeedScreen> {
                                     groupId: widget.groupId,
                                     date: formattedDate,
                                     diaryId: diaryDocs[index].id,
-                                      // 🔹 공개/숨기기 버튼 콜백
                                     onToggleRevealed: () async {
                                       try {
                                         await FirebaseFirestore.instance
@@ -278,29 +281,35 @@ class _FeedScreenState extends State<FeedScreen> {
                                             .collection('diaries')
                                             .doc(diaryDocs[index].id)
                                             .update({
-                                          'isRevealed': !(data['isRevealed'] ?? false),
-                                        });
+                                              'isRevealed':
+                                                  !(data['isRevealed'] ??
+                                                      false),
+                                            });
                                       } catch (e) {
                                         print('🔥 공개 상태 토글 중 오류 발생: $e');
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
                                           SnackBar(content: Text('오류 발생: $e')),
                                         );
                                       }
                                     },
-
                                     onImageTap: () {
-                                      final dateText = DateFormat('yyyy년 M월 d일 EEEE', 'ko_KR')
-                                          .format(selectedDate);
+                                      final dateText = DateFormat(
+                                        'yyyy년 M월 d일 EEEE',
+                                        'ko_KR',
+                                      ).format(selectedDate);
 
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => DiaryDetailScreen(
-                                            imageUrl: data['imageUrl'],
-                                            title: data['title'],
-                                            content: data['content'],
-                                            dateText: dateText,
-                                          ),
+                                          builder: (context) =>
+                                              DiaryDetailScreen(
+                                                imageUrl: data['imageUrl'],
+                                                title: data['title'],
+                                                content: data['content'],
+                                                dateText: dateText,
+                                              ),
                                         ),
                                       );
                                     },
