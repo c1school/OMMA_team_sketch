@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 class CommentSection extends StatefulWidget {
   final String groupId;
@@ -22,6 +23,14 @@ class _CommentSectionState extends State<CommentSection> {
   final TextEditingController _commentController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  // 댓글 작성 시간 포맷 함수
+  String formatTimestamp(Timestamp? timestamp) {
+    if (timestamp == null) return '';
+    final dt = timestamp.toDate();
+    return DateFormat('yyyy.MM.dd HH:mm').format(dt);
+  }
+
+  // 댓글 저장
   Future<void> _submitComment() async {
     final content = _commentController.text.trim();
     if (content.isEmpty) return;
@@ -29,6 +38,17 @@ class _CommentSectionState extends State<CommentSection> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
+    final userRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid);
+    final userSnapshot = await userRef.get();
+    final userData = userSnapshot.data();
+
+    // nickname 불러오기
+    final nickname =
+        userData?['groups']?[widget.groupId]?['nickname'] ?? '정보없음';
+
+    // 댓글 저장
     await FirebaseFirestore.instance
         .collection('groups')
         .doc(widget.groupId)
@@ -39,8 +59,8 @@ class _CommentSectionState extends State<CommentSection> {
         .collection('comments')
         .add({
           'content': content,
-          'createdBy': user.uid,
-          'nickname': '익명',
+          'createdBy': userRef,
+          'nickname': nickname,
           'createdAt': FieldValue.serverTimestamp(),
         });
 
@@ -92,15 +112,37 @@ class _CommentSectionState extends State<CommentSection> {
                 itemCount: comments.length,
                 itemBuilder: (context, index) {
                   final data = comments[index].data() as Map<String, dynamic>;
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        (data['nickname'] ?? '익명') + ': ',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      Expanded(child: Text(data['content'] ?? '')),
-                    ],
+                  final nickname = data['nickname'] ?? '정보없음';
+                  final content = data['content'] ?? '';
+                  final createdAt = data['createdAt'] as Timestamp?;
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '$nickname: ',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Expanded(child: Text(content)),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          formatTimestamp(createdAt),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 },
               );
