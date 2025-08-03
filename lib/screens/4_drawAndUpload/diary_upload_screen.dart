@@ -271,55 +271,63 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
                 ClipRect(
                   child: RepaintBoundary(
                     key: canvasKey,
-                    child: Listener(
-                      onPointerDown: (event) {
-                        final localPosition = event.localPosition;
-                        if (_isInside(localPosition)) {
+                    child: GestureDetector(
+                      onVerticalDragUpdate: (_) {}, // 스크롤 무시
+                      onHorizontalDragUpdate: (_) {}, // 스크롤 무시
+                      child: Listener(
+                        onPointerDown: (event) {
+                          final localPosition = event.localPosition;
+                          if (_isInside(localPosition)) {
+                            setState(() {
+                              isDrawing = true;
+                              lines.add(
+                                DrawnLine(
+                                  point: localPosition,
+                                  color: selectedColor,
+                                ),
+                              );
+                            });
+                          }
+                        },
+                        onPointerMove: (event) {
+                          if (!isDrawing) return;
+                          final localPosition = event.localPosition;
+                          if (_isInside(localPosition)) {
+                            setState(() {
+                              lines.add(
+                                DrawnLine(
+                                  point: localPosition,
+                                  color: selectedColor,
+                                ),
+                              );
+                            });
+                          }
+                        },
+                        onPointerUp: (_) {
                           setState(() {
-                            isDrawing = true;
-                            lines.add(
-                              DrawnLine(
-                                point: localPosition,
-                                color: selectedColor,
-                              ),
-                            );
+                            isDrawing = false;
+                            lines.add(null);
                           });
-                        }
-                      },
-                      onPointerMove: (event) {
-                        if (!isDrawing) return;
-                        final localPosition = event.localPosition;
-                        if (_isInside(localPosition)) {
-                          setState(() {
-                            lines.add(
-                              DrawnLine(
-                                point: localPosition,
-                                color: selectedColor,
-                              ),
-                            );
-                          });
-                        }
-                      },
-                      onPointerUp: (_) {
-                        setState(() {
-                          isDrawing = false;
-                          lines.add(null);
-                        });
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black12),
-                          color: Colors.white,
-                        ),
-                        child: CustomPaint(
-                          painter: DrawingPainter(lines: lines),
+                        },
+                        child: AbsorbPointer(
+                          absorbing: false, // 터치는 여전히 동작해야 하므로 false
+                          child: Container(
+                            width: double.infinity,
+                            height: 200,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.black12),
+                              color: Colors.white,
+                            ),
+                            child: CustomPaint(
+                              painter: DrawingPainter(lines: lines),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
