@@ -266,12 +266,16 @@ class _FeedScreenState extends State<FeedScreen> {
                                                 .collection('diaries')
                                                 .doc(diaryDocs[index].id);
 
+                                            final newIsRevealed =
+                                                !(data['isRevealed'] ?? false);
+                                            final isCurrentlyAnonymous =
+                                                data['isAnonymous'] ?? true;
+
                                             await docRef.update({
-                                              'isRevealed':
-                                                  !(data['isRevealed'] ??
-                                                      false),
-                                              if (data['isAnonymous'] == true)
-                                                'isAnonymous': false,
+                                              'isRevealed': newIsRevealed,
+                                              'isAnonymous': newIsRevealed
+                                                  ? false
+                                                  : true, // 공개되면 false, 숨기면 true
                                             });
                                           } catch (e) {
                                             ScaffoldMessenger.of(

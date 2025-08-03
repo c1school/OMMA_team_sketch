@@ -75,7 +75,7 @@ class DiaryPageCard extends StatelessWidget {
             const SizedBox(height: 12),
 
             // ✅ 공개 여부에 따른 제목/내용
-            if (isRevealed) ...[
+            if (isRevealed || isMyDiary) ...[
               Text("제목: $title", style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 8),
               Text(content, style: const TextStyle(fontSize: 14)),
