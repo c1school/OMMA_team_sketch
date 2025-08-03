@@ -1,5 +1,3 @@
-// ✅ 수정된 diary_upload_screen.dart (힌트 입력 없이도 업로드 가능)
-
 import 'dart:ui' as ui;
 import 'dart:typed_data';
 
@@ -99,6 +97,7 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
 
     final hintContent = hintResult['hint_content'] ?? '';
     final isAuthorRevealed = hintResult['isAuthorRevealed'] ?? false;
+    final isAnonymous = !isAuthorRevealed; // ✅ 추가: DB에 저장할 익명 여부
 
     try {
       final boundary =
@@ -120,7 +119,8 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
           .collection('users')
           .doc(user.uid)
           .get();
-      final userNickname = userDoc.data()?['name'] ?? '익명';
+      final userNickname =
+          userDoc.data()?['groups']?[groupId]?['nickname'] ?? '오류';
 
       await FirebaseFirestore.instance
           .collection('groups')
@@ -133,8 +133,9 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
             'content': contentController.text,
             'imageUrl': imageUrl,
             'createdBy': user.uid,
-            'createdByNickname': isAuthorRevealed ? userNickname : '익명',
+            'createdByNickname': userNickname,
             'isAuthorRevealed': isAuthorRevealed,
+            'isAnonymous': isAnonymous, // ✅ 추가됨
             'createdAt': FieldValue.serverTimestamp(),
             'isRevealed': false,
             'hint': {'hint_content': hintContent, 'isRevealed': false},
