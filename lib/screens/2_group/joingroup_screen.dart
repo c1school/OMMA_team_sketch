@@ -52,7 +52,11 @@ class _JoinGroupScreenState extends State<JoinGroupScreen> {
       if (groupData == null) throw Exception("팀 정보를 찾을 수 없습니다.");
 
       final membersCount = (groupData['membersCount'] ?? 0) as int;
-      final nickname = _nicknameController.text.trim();
+      final userSnapshot = await _firestore.collection('users').doc(uid).get();
+      final userName = userSnapshot.data()?['name'] ?? '이름없음';
+
+      final nicknameInput = _nicknameController.text.trim();
+      final nickname = nicknameInput.isNotEmpty ? nicknameInput : userName;
 
       String role = '';
       if (widget.groupType == '가족') {
