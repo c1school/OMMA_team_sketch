@@ -97,7 +97,7 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
 
     final hintContent = hintResult['hint_content'] ?? '';
     final isAuthorRevealed = hintResult['isAuthorRevealed'] ?? false;
-    final isAnonymous = !isAuthorRevealed; // ✅ 추가: DB에 저장할 익명 여부
+    final isAnonymous = !isAuthorRevealed;
 
     try {
       final boundary =
@@ -135,7 +135,7 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
             'createdBy': user.uid,
             'createdByNickname': userNickname,
             'isAuthorRevealed': isAuthorRevealed,
-            'isAnonymous': isAnonymous, // ✅ 추가됨
+            'isAnonymous': isAnonymous,
             'createdAt': FieldValue.serverTimestamp(),
             'isRevealed': false,
             'hint': {'hint_content': hintContent, 'isRevealed': false},
@@ -268,49 +268,54 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
                   style: const TextStyle(fontSize: 14, color: Colors.teal),
                 ),
                 const SizedBox(height: 12),
-                ClipRect(
-                  child: RepaintBoundary(
-                    key: canvasKey,
-                    child: GestureDetector(
-                      onVerticalDragUpdate: (_) {}, // 스크롤 무시
-                      onHorizontalDragUpdate: (_) {}, // 스크롤 무시
-                      child: Listener(
-                        onPointerDown: (event) {
-                          final localPosition = event.localPosition;
-                          if (_isInside(localPosition)) {
+                NotificationListener<ScrollNotification>(
+                  onNotification: (_) => true,
+                  child: ClipRect(
+                    child: RepaintBoundary(
+                      key: canvasKey,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onVerticalDragStart: (_) {},
+                        onVerticalDragUpdate: (_) {},
+                        onVerticalDragEnd: (_) {},
+                        onHorizontalDragStart: (_) {},
+                        onHorizontalDragUpdate: (_) {},
+                        onHorizontalDragEnd: (_) {},
+                        child: Listener(
+                          onPointerDown: (event) {
+                            final localPosition = event.localPosition;
+                            if (_isInside(localPosition)) {
+                              setState(() {
+                                isDrawing = true;
+                                lines.add(
+                                  DrawnLine(
+                                    point: localPosition,
+                                    color: selectedColor,
+                                  ),
+                                );
+                              });
+                            }
+                          },
+                          onPointerMove: (event) {
+                            if (!isDrawing) return;
+                            final localPosition = event.localPosition;
+                            if (_isInside(localPosition)) {
+                              setState(() {
+                                lines.add(
+                                  DrawnLine(
+                                    point: localPosition,
+                                    color: selectedColor,
+                                  ),
+                                );
+                              });
+                            }
+                          },
+                          onPointerUp: (_) {
                             setState(() {
-                              isDrawing = true;
-                              lines.add(
-                                DrawnLine(
-                                  point: localPosition,
-                                  color: selectedColor,
-                                ),
-                              );
+                              isDrawing = false;
+                              lines.add(null);
                             });
-                          }
-                        },
-                        onPointerMove: (event) {
-                          if (!isDrawing) return;
-                          final localPosition = event.localPosition;
-                          if (_isInside(localPosition)) {
-                            setState(() {
-                              lines.add(
-                                DrawnLine(
-                                  point: localPosition,
-                                  color: selectedColor,
-                                ),
-                              );
-                            });
-                          }
-                        },
-                        onPointerUp: (_) {
-                          setState(() {
-                            isDrawing = false;
-                            lines.add(null);
-                          });
-                        },
-                        child: AbsorbPointer(
-                          absorbing: false, // 터치는 여전히 동작해야 하므로 false
+                          },
                           child: Container(
                             width: double.infinity,
                             height: 200,
@@ -327,7 +332,6 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
