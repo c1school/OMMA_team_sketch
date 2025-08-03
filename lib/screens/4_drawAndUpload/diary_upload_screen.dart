@@ -1,3 +1,5 @@
+// ✅ 수정된 diary_upload_screen.dart (힌트 입력 없이도 업로드 가능)
+
 import 'dart:ui' as ui;
 import 'dart:typed_data';
 
@@ -55,29 +57,21 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
   }
 
   bool _isInside(Offset point) {
-    return point.dx >= 0 &&
-        point.dx <= 350 &&
-        point.dy >= 0 &&
-        point.dy <= 200;
+    return point.dx >= 0 && point.dx <= 350 && point.dy >= 0 && point.dy <= 200;
   }
 
   void _undoLastStroke() {
     setState(() {
       if (lines.isEmpty) return;
-        // 마지막 선이 그려진 지점 찾기 (null 아닌 마지막)
-        int last = lines.length - 1;
-        while (last >= 0 && lines[last] == null) {
-          last--;
-        }
-
-        // 이번에 지워야 할 구간 시작점 (null 이전까지)
-        int first = last;
-        while (first >= 0 && lines[first] != null) {
-          first--;
-        }
-
-        // null 포함해서 전체 삭제
-        lines.removeRange(first + 1, lines.length);
+      int last = lines.length - 1;
+      while (last >= 0 && lines[last] == null) {
+        last--;
+      }
+      int first = last;
+      while (first >= 0 && lines[first] != null) {
+        first--;
+      }
+      lines.removeRange(first + 1, lines.length);
     });
   }
 
@@ -105,13 +99,6 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
 
     final hintContent = hintResult['hint_content'] ?? '';
     final isAuthorRevealed = hintResult['isAuthorRevealed'] ?? false;
-
-    if (hintContent.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('힌트를 입력해주세요.')));
-      return;
-    }
 
     try {
       final boundary =
@@ -169,7 +156,6 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
 
   Future<Map<String, dynamic>?> showHintDialog(BuildContext context) async {
     final TextEditingController hintController = TextEditingController();
-    ValueNotifier<bool> isEmpty = ValueNotifier(false);
 
     return showDialog<Map<String, dynamic>>(
       context: context,
@@ -194,10 +180,9 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
               TextField(
                 controller: hintController,
                 maxLines: 3,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: '힌트를 입력하세요 (예: 우리가 어제 간 장소!)',
-                  border: const OutlineInputBorder(),
-                  errorText: isEmpty.value ? '힌트를 입력해주세요.' : null,
+                  border: OutlineInputBorder(),
                 ),
               ),
             ],
@@ -208,14 +193,10 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    if (hintController.text.trim().isEmpty) {
-                      isEmpty.value = true;
-                    } else {
-                      Navigator.of(context).pop({
-                        'hint_content': hintController.text.trim(),
-                        'isAuthorRevealed': false,
-                      });
-                    }
+                    Navigator.of(context).pop({
+                      'hint_content': hintController.text.trim(),
+                      'isAuthorRevealed': false,
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
@@ -229,14 +210,10 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
                 ),
                 OutlinedButton(
                   onPressed: () {
-                    if (hintController.text.trim().isEmpty) {
-                      isEmpty.value = true;
-                    } else {
-                      Navigator.of(context).pop({
-                        'hint_content': hintController.text.trim(),
-                        'isAuthorRevealed': true,
-                      });
-                    }
+                    Navigator.of(context).pop({
+                      'hint_content': hintController.text.trim(),
+                      'isAuthorRevealed': true,
+                    });
                   },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.green,
@@ -296,7 +273,6 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
                     child: Listener(
                       onPointerDown: (event) {
                         final localPosition = event.localPosition;
-                        // ✅ 입력 영역을 제한하는 조건 추가
                         if (_isInside(localPosition)) {
                           setState(() {
                             isDrawing = true;
@@ -309,73 +285,73 @@ class _DiaryUploadScreenState extends State<DiaryUploadScreen> {
                           });
                         }
                       },
-                    onPointerMove: (event) {
-                      if (!isDrawing) return;
-                      final localPosition = event.localPosition;
-                      // ✅ 입력 영역 제한 조건 추가
-                      if (_isInside(localPosition)) {
+                      onPointerMove: (event) {
+                        if (!isDrawing) return;
+                        final localPosition = event.localPosition;
+                        if (_isInside(localPosition)) {
+                          setState(() {
+                            lines.add(
+                              DrawnLine(
+                                point: localPosition,
+                                color: selectedColor,
+                              ),
+                            );
+                          });
+                        }
+                      },
+                      onPointerUp: (_) {
                         setState(() {
-                          lines.add(
-                            DrawnLine(
-                              point: localPosition,
-                              color: selectedColor,
-                            ),
-                          );
+                          isDrawing = false;
+                          lines.add(null);
                         });
-                      }
-                    },
-                    onPointerUp: (_) {
-                      setState(() {
-                        isDrawing = false;
-                        lines.add(null);
-                      });
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      height: 200,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.black12),
-                        color: Colors.white,
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black12),
+                          color: Colors.white,
+                        ),
+                        child: CustomPaint(
+                          painter: DrawingPainter(lines: lines),
+                        ),
                       ),
-                      child: CustomPaint(painter: DrawingPainter(lines: lines)),
                     ),
                   ),
                 ),
-              ),
                 const SizedBox(height: 8),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     ...colorPalette.map((color) {
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() => selectedColor = color);
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: 24,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: selectedColor == color
-                                ? Colors.black
-                                : Colors.transparent,
-                            width: 2,
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() => selectedColor = color);
+                        },
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: color,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: selectedColor == color
+                                  ? Colors.black
+                                  : Colors.transparent,
+                              width: 2,
+                            ),
                           ),
                         ),
-                      ),
-                    );
-                  }).toList(),
-
-                  IconButton(
-                    icon: const Icon(Icons.undo),
-                    tooltip: '되돌리기',
-                    onPressed: _undoLastStroke,
-                  ),
-                ],
-              ),
+                      );
+                    }).toList(),
+                    IconButton(
+                      icon: const Icon(Icons.undo),
+                      tooltip: '되돌리기',
+                      onPressed: _undoLastStroke,
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: titleController,
