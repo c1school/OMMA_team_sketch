@@ -173,8 +173,9 @@ class _FeedScreenState extends State<FeedScreen> {
                       .doc(formattedDate)
                       .get(),
                   builder: (context, snapshot) {
-                    if (!snapshot.hasData)
+                    if (!snapshot.hasData) {
                       return const CircularProgressIndicator();
+                    }
 
                     final dailyDoc = snapshot.data!;
                     if (!dailyDoc.exists) return const Text('해당 날짜의 질문이 없습니다.');
@@ -254,29 +255,35 @@ class _FeedScreenState extends State<FeedScreen> {
                                       DiaryPageCard(
                                         diaryData: data,
                                         isMyDiary: isMine,
-                                        onToggleRevealed: () {
-                                          FirebaseFirestore.instance
-                                              .collection('groups')
-                                              .doc(widget.groupId)
-                                              .collection('daily_questions')
-                                              .doc(formattedDate)
-                                              .collection('diaries')
-                                              .doc(diaryDocs[index].id)
-                                              .update({
-                                                'isRevealed':
-                                                    !(data['isRevealed'] ??
-                                                        false),
-                                              })
-                                              .catchError((e) {
-                                                ScaffoldMessenger.of(
-                                                  context,
-                                                ).showSnackBar(
-                                                  SnackBar(
-                                                    content: Text('오류 발생: $e'),
-                                                  ),
-                                                );
-                                              });
+                                        onToggleRevealed: () async {
+                                          try {
+                                            final docRef = FirebaseFirestore
+                                                .instance
+                                                .collection('groups')
+                                                .doc(widget.groupId)
+                                                .collection('daily_questions')
+                                                .doc(formattedDate)
+                                                .collection('diaries')
+                                                .doc(diaryDocs[index].id);
+
+                                            await docRef.update({
+                                              'isRevealed':
+                                                  !(data['isRevealed'] ??
+                                                      false),
+                                              if (data['isAnonymous'] == true)
+                                                'isAnonymous': false,
+                                            });
+                                          } catch (e) {
+                                            ScaffoldMessenger.of(
+                                              context,
+                                            ).showSnackBar(
+                                              SnackBar(
+                                                content: Text('오류 발생: $e'),
+                                              ),
+                                            );
+                                          }
                                         },
+
                                         onImageTap: () {
                                           final dateText = DateFormat(
                                             'yyyy년 M월 d일 EEEE',
